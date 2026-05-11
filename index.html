@@ -138,7 +138,9 @@
     .add-cat-btn { width: 100%; padding: 11px; background: var(--accent); color: var(--accent-text); border: none; border-radius: var(--radius); font-size: 14px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; }
     .add-cat-btn:disabled { opacity: 0.25; cursor: default; }
 
-    .empty { text-align: center; padding: 3rem 1rem; color: var(--text3); font-size: 14px; }
+    .entry-right { display: flex; align-items: center; gap: 8px; }
+    .del-entry-btn { background: none; border: none; cursor: pointer; color: var(--text3); font-size: 16px; padding: 4px; display: flex; align-items: center; transition: color 0.1s; }
+    .del-entry-btn:hover { color: var(--danger-text); } padding: 3rem 1rem; color: var(--text3); font-size: 14px; }
     .empty i { font-size: 36px; display: block; margin-bottom: 8px; }
 
     .flash { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--success-bg); border: 0.5px solid var(--success-border); color: var(--success-text); padding: 13px 22px; border-radius: var(--radius-lg); font-size: 14px; font-weight: 500; display: none; z-index: 200; white-space: nowrap; pointer-events: none; }
@@ -224,7 +226,7 @@
 <script>
 const DEFAULT_CATS = [
   {id:'boodschappen',label:'Boodschappen',icon:'ti-shopping-cart'},
-  {id:'eten',label:'Uit eten / koffie',icon:'ti-coffee'},
+  {id:'eten',label:'Horeca',icon:'ti-coffee'},
   {id:'transport',label:'Transport',icon:'ti-train'},
   {id:'kleding',label:'Kleding',icon:'ti-shirt'},
   {id:'abonnementen',label:'Abonnementen',icon:'ti-refresh'},
@@ -315,9 +317,13 @@ function renderEntries(){
   el.innerHTML=Object.entries(groups).map(([day,es])=>
     `<div class="day-group"><div class="day-label">${day}</div>${es.map(e=>{
       const cat=gc(e.cat);
-      return `<div class="entry-card"><div class="entry-icon"><i class="ti ${cat.icon}"></i></div><div class="entry-info"><div class="entry-cat">${cat.label}</div>${e.note?`<div class="entry-note">${e.note}</div>`:''}</div><div class="entry-amt">€ ${e.amount.toFixed(2)}</div></div>`;
+      return `<div class="entry-card"><div class="entry-icon"><i class="ti ${cat.icon}"></i></div><div class="entry-info"><div class="entry-cat">${cat.label}</div>${e.note?`<div class="entry-note">${e.note}</div>`:''}</div><div class="entry-right"><div class="entry-amt">€ ${e.amount.toFixed(2)}</div><button class="del-entry-btn" onclick="delEntry(${e.id})"><i class="ti ti-trash"></i></button></div></div>`;
     }).join('')}</div>`
   ).join('');
+}
+
+function delEntry(id){
+  entries=entries.filter(e=>e.id!==id);persist();renderEntries();renderOverview();
 }
 
 function renderManage(){
