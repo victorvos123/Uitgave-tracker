@@ -44,8 +44,8 @@
     .nav-btn.active { color: var(--text); }
     .add-header { padding: 2rem 1.5rem 1rem; }
     .date-lbl { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); margin-bottom: 1.5rem; font-family: 'Space Mono', monospace; }
-    .amount-value { font-family: 'Space Mono', monospace; font-size: 56px; font-weight: 700; color: var(--text); letter-spacing: -3px; line-height: 1; margin-bottom: 2rem; height: 60px; display: flex; align-items: center; }
-    .amount-value.empty { color: var(--text3); }
+    .amount-value { font-family: 'Space Mono', monospace; font-size: 56px; font-weight: 700; color: var(--text); letter-spacing: -3px; line-height: 1; margin-bottom: 2rem; height: 70px; min-height: 70px; display: flex; align-items: center; flex-shrink: 0; }
+    .amount-value.empty { color: var(--text3); font-size: 56px; }
     .pad-area { padding: 0 1rem; }
     .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 1.5rem; }
     .num-btn { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 20px 8px; font-size: 22px; font-weight: 400; color: var(--text); cursor: pointer; font-family: 'Space Mono', monospace; transition: background 0.1s; }
@@ -109,8 +109,8 @@
     .icon-opt.selected { background: var(--surface3); border-color: var(--border2); color: var(--text); }
     .add-cat-btn { width: 100%; padding: 12px; background: var(--accent); color: var(--accent-text); border: none; border-radius: var(--radius); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; font-family: 'Space Grotesk', sans-serif; }
     .add-cat-btn:disabled { opacity: 0.2; cursor: default; }
-    .empty { text-align: center; padding: 4rem 1rem; color: var(--text3); font-size: 12px; font-family: 'Space Mono', monospace; }
-    .empty i { font-size: 32px; display: block; margin-bottom: 12px; }
+    .empty-state { text-align: center; padding: 4rem 1rem; color: var(--text3); font-size: 12px; font-family: 'Space Mono', monospace; }
+    .empty-state i { font-size: 32px; display: block; margin-bottom: 12px; }
     .flash { position: fixed; top: 2rem; left: 50%; transform: translateX(-50%); background: var(--surface3); border: 0.5px solid var(--border2); color: var(--green); padding: 10px 20px; border-radius: 100px; font-size: 12px; font-family: 'Space Mono', monospace; display: none; z-index: 200; white-space: nowrap; letter-spacing: 0.05em; }
   </style>
 </head>
@@ -316,7 +316,7 @@ function renderOverview(){
   const sorted=Object.entries(bc).sort((a,b)=>b[1]-a[1]);
   const maxAmt=sorted.length?sorted[0][1]:1;
   const el=document.getElementById('cat-overview');
-  if(!sorted.length){el.innerHTML='<div class="empty"><i class="ti ti-receipt-off"></i>geen uitgaven</div>';return;}
+  if(!sorted.length){el.innerHTML='<div class="empty-state"><i class="ti ti-receipt-off"></i>geen uitgaven</div>';return;}
   el.innerHTML=sorted.map(([cid,amt])=>{
     const cat=gc(cid),pct=Math.round((amt/maxAmt)*100);
     return `<div class="cat-ov-row"><div class="cat-ov-icon"><i class="ti ${cat.icon}"></i></div><div class="cat-ov-info"><div class="cat-ov-name">${cat.label}</div><div class="cat-ov-bar-wrap"><div class="cat-ov-bar" style="width:${pct}%"></div></div></div><div class="cat-ov-amt">€ ${amt.toFixed(2)}</div></div>`;
@@ -326,7 +326,7 @@ function renderOverview(){
 function renderEntries(){
   const sorted=[...entries].sort((a,b)=>new Date(b.date)-new Date(a.date));
   const el=document.getElementById('entries-list');
-  if(!sorted.length){el.innerHTML='<div class="empty"><i class="ti ti-receipt-off"></i>nog geen uitgaven</div>';return;}
+  if(!sorted.length){el.innerHTML='<div class="empty-state"><i class="ti ti-receipt-off"></i>nog geen uitgaven</div>';return;}
   const groups={};
   sorted.forEach(e=>{
     const d=new Date(e.date),key=d.toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long'});
