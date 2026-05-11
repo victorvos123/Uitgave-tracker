@@ -1,0 +1,25 @@
+{
+  "name": "Uitgave Tracker",
+  "short_name": "Uitgaven",
+  "description": "Houd eenvoudig je uitgaven bij",
+  "start_url": "/Uitgave-tracker/",
+  "scope": "/Uitgave-tracker/",
+  "display": "standalone",
+  "background_color": "#f5f4f0",
+  "theme_color": "#1a1a1a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
