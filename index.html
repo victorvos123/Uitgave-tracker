@@ -69,6 +69,9 @@
     .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 1.5rem; }
     .num-btn { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 20px 8px; font-size: 22px; font-weight: 400; color: var(--text); cursor: pointer; font-family: 'Space Mono', monospace; transition: background 0.1s; }
     .num-btn:active { background: var(--surface3); }
+    .split-row { display: flex; gap: 6px; margin-bottom: 1.5rem; }
+    .split-btn { flex: 1; background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 10px 4px; font-size: 12px; color: var(--text3); cursor: pointer; font-family: 'Space Mono', monospace; transition: all 0.15s; text-align: center; }
+    .split-btn.active { background: var(--surface3); border-color: var(--border2); color: var(--text); }
     .cat-section { padding: 0 1rem 1rem; }
     .section-lbl { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); margin-bottom: 10px; font-family: 'Space Mono', monospace; }
     .cat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-bottom: 1rem; }
@@ -180,6 +183,15 @@
         <button class="num-btn" onclick="n('7')">7</button><button class="num-btn" onclick="n('8')">8</button><button class="num-btn" onclick="n('9')">9</button>
         <button class="num-btn" onclick="n('.')">.</button><button class="num-btn" onclick="n('0')">0</button>
         <button class="num-btn" onclick="del()"><i class="ti ti-backspace"></i></button>
+      </div>
+    </div>
+    <div class="pad-area" style="padding-top:0">
+      <div class="split-row">
+        <button class="split-btn" id="split-1" onclick="setSplit(1)">÷ 1</button>
+        <button class="split-btn" id="split-2" onclick="setSplit(2)">÷ 2</button>
+        <button class="split-btn" id="split-3" onclick="setSplit(3)">÷ 3</button>
+        <button class="split-btn" id="split-4" onclick="setSplit(4)">÷ 4</button>
+        <button class="split-btn" id="split-5" onclick="setSplit(5)">÷ 5</button>
       </div>
     </div>
     <div class="cat-section">
@@ -351,6 +363,15 @@ function renderCats(){
     `<button class="cat-btn${selCat===c.id?' selected':''}" onclick="sc('${c.id}')"><i class="ti ${c.icon}"></i>${c.label}</button>`
   ).join('');
 }
+let splitBy = 1;
+
+function setSplit(n){
+  splitBy = n;
+  document.querySelectorAll('.split-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('split-'+n).classList.add('active');
+  updDisp();
+}
+
 function sc(id){selCat=id;renderCats();upd();}
 
 function n(v){
@@ -362,8 +383,13 @@ function del(){raw=raw.slice(0,-1);updDisp();upd();}
 function updDisp(){
   const val=parseFloat(raw)||0;
   const el=document.getElementById('display');
+  const split=val/splitBy;
   const str=raw.endsWith('.')?val.toFixed(0)+'.':val%1===0?val.toFixed(0):val.toFixed(2);
-  el.textContent='€ '+str;
+  if(splitBy>1&&val>0){
+    el.textContent='€ '+split.toFixed(2);
+  } else {
+    el.textContent='€ '+str;
+  }
   el.classList.toggle('empty',!raw);
 }
 function upd(){document.getElementById('save-btn').disabled=!(parseFloat(raw)>0&&selCat);}
@@ -385,11 +411,11 @@ function playCashSound(){
 }
 
 function save(){
-  const amt=parseFloat(raw);
+  const amt=parseFloat(raw)/splitBy;
   if(!amt||!selCat)return;
   entries.push({id:Date.now(),amount:amt,cat:selCat,note:document.getElementById('note').value.trim(),date:selectedDate.toISOString()});
   persist();
-  raw='';selCat=null;document.getElementById('note').value='';selectedDate=new Date();setTodayLbl();
+  raw='';selCat=null;splitBy=1;document.querySelectorAll('.split-btn').forEach(b=>b.classList.remove('active'));document.getElementById('split-1').classList.add('active');document.getElementById('note').value='';selectedDate=new Date();setTodayLbl();
   updDisp();renderCats();upd();
   playCashSound();
   const f=document.getElementById('flash');
