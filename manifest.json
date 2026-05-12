@@ -1,7 +1,7 @@
 {
-  "name": "Uitgave Tracker",
-  "short_name": "Uitgaven",
-  "description": "Houd eenvoudig je uitgaven bij",
+  "name": "Poen",
+  "short_name": "poen",
+  "description": "Houd bewust je uitgaven bij",
   "start_url": "/Uitgave-tracker/",
   "scope": "/Uitgave-tracker/",
   "display": "standalone",
