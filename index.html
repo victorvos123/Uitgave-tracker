@@ -50,14 +50,18 @@
     .date-picker-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 300; display: none; align-items: flex-end; justify-content: center; }
     .date-picker-overlay.open { display: flex; }
     .date-picker-sheet { background: var(--surface2); border-radius: var(--radius-lg) var(--radius-lg) 0 0; width: 100%; max-width: 430px; padding: 1.5rem 1.5rem calc(1.5rem + var(--safe-bottom)); }
-    .date-picker-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+    .date-picker-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
     .date-picker-title { font-family: 'Space Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text2); }
     .date-picker-close { background: none; border: none; cursor: pointer; color: var(--text2); font-size: 20px; padding: 4px; display: flex; }
-    .date-scroll-wrap { display: flex; gap: 8px; margin-bottom: 1.5rem; }
-    .date-scroll-col { flex: 1; height: 160px; overflow-y: scroll; scroll-snap-type: y mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
-    .date-scroll-col::-webkit-scrollbar { display: none; }
-    .date-scroll-item { height: 40px; display: flex; align-items: center; justify-content: center; scroll-snap-align: center; font-family: 'Space Mono', monospace; font-size: 14px; color: var(--text3); cursor: pointer; border-radius: 8px; transition: color 0.1s; }
-    .date-scroll-item.selected { color: var(--text); background: var(--surface3); }
+    .wheel-wrap { position: relative; height: 200px; overflow: hidden; margin-bottom: 1rem; }
+    .wheel-scroll { height: 100%; overflow-y: scroll; scroll-snap-type: y mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .wheel-scroll::-webkit-scrollbar { display: none; }
+    .wheel-item { height: 50px; display: flex; align-items: center; justify-content: center; scroll-snap-align: center; font-family: 'Space Mono', monospace; font-size: 15px; color: var(--text3); transition: color 0.15s, font-size 0.15s; }
+    .wheel-item.center { color: var(--text); font-size: 17px; font-weight: 700; }
+    .wheel-fade-top { position: absolute; top: 0; left: 0; right: 0; height: 75px; background: linear-gradient(to bottom, var(--surface2), transparent); pointer-events: none; z-index: 1; }
+    .wheel-fade-bottom { position: absolute; bottom: 0; left: 0; right: 0; height: 75px; background: linear-gradient(to top, var(--surface2), transparent); pointer-events: none; z-index: 1; }
+    .wheel-line { position: absolute; top: 50%; left: 1.5rem; right: 1.5rem; height: 0.5px; background: var(--border2); pointer-events: none; z-index: 2; transform: translateY(-25px); }
+    .wheel-line-bottom { position: absolute; top: 50%; left: 1.5rem; right: 1.5rem; height: 0.5px; background: var(--border2); pointer-events: none; z-index: 2; transform: translateY(24px); }
     .date-confirm-btn { width: 100%; padding: 14px; background: var(--accent); color: var(--accent-text); border: none; border-radius: var(--radius); font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; font-family: 'Space Grotesk', sans-serif; }
     .amount-value { font-family: 'Space Mono', monospace; font-size: 56px; font-weight: 700; color: var(--text); letter-spacing: -3px; line-height: 1; margin-bottom: 2rem; height: 70px; min-height: 70px; display: flex; align-items: center; flex-shrink: 0; }
     .amount-value.empty { color: var(--text3); font-size: 56px; }
@@ -156,10 +160,15 @@
           <div class="date-picker-title">Datum kiezen</div>
           <button class="date-picker-close" onclick="closeDatePicker()"><i class="ti ti-x"></i></button>
         </div>
-        <div class="date-scroll-wrap">
-          <div class="date-scroll-col" id="scroll-day"></div>
-          <div class="date-scroll-col" id="scroll-month"></div>
-          <div class="date-scroll-col" id="scroll-year"></div>
+        <div class="wheel-wrap">
+          <div class="wheel-fade-top"></div>
+          <div class="wheel-fade-bottom"></div>
+          <div class="wheel-line"></div>
+          <div class="wheel-line-bottom"></div>
+          <div class="wheel-scroll" id="wheel-scroll">
+            <div style="height:75px"></div>
+            <div style="height:75px"></div>
+          </div>
         </div>
         <button class="date-confirm-btn" onclick="confirmDate()">Bevestigen</button>
       </div>
@@ -282,38 +291,45 @@ function setTodayLbl(){
 
 const MONTHS_NL=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
 
+const DAYS_NL=['zo','ma','di','wo','do','vr','za'];
+let wheelDates=[];
+
 function openDatePicker(){
   const now=new Date();
-  const d=selectedDate;
-  // Build day list (1-31)
-  const dayCol=document.getElementById('scroll-day');
-  const monthCol=document.getElementById('scroll-month');
-  const yearCol=document.getElementById('scroll-year');
-  dayCol.innerHTML='<div style="height:60px"></div>'+
-    Array.from({length:31},(_,i)=>`<div class="date-scroll-item${d.getDate()===i+1?' selected':''}" data-val="${i+1}">${String(i+1).padStart(2,'0')}</div>`).join('')+
-    '<div style="height:60px"></div>';
-  monthCol.innerHTML='<div style="height:60px"></div>'+
-    MONTHS_NL.map((m,i)=>`<div class="date-scroll-item${d.getMonth()===i?' selected':''}" data-val="${i}">${m}</div>`).join('')+
-    '<div style="height:60px"></div>';
-  const curYear=now.getFullYear();
-  yearCol.innerHTML='<div style="height:60px"></div>'+
-    [curYear-1,curYear].map(y=>`<div class="date-scroll-item${d.getFullYear()===y?' selected':''}" data-val="${y}">${y}</div>`).join('')+
-    '<div style="height:60px"></div>';
-  // Scroll to selected
-  [dayCol,monthCol,yearCol].forEach(col=>{
-    const sel=col.querySelector('.selected');
-    if(sel) col.scrollTop=sel.offsetTop-60;
-  });
-  // Click to select
-  [dayCol,monthCol,yearCol].forEach(col=>{
-    col.querySelectorAll('.date-scroll-item').forEach(item=>{
-      item.onclick=()=>{
-        col.querySelectorAll('.date-scroll-item').forEach(i=>i.classList.remove('selected'));
-        item.classList.add('selected');
-      };
-    });
-  });
+  // Build list of last 30 days + today
+  wheelDates=[];
+  for(let i=30;i>=0;i--){
+    const d=new Date(now.getFullYear(),now.getMonth(),now.getDate()-i);
+    wheelDates.push(d);
+  }
+  const scroll=document.getElementById('wheel-scroll');
+  scroll.innerHTML='<div style="height:75px"></div>'+
+    wheelDates.map((d,i)=>{
+      const isToday=i===wheelDates.length-1;
+      const isYesterday=i===wheelDates.length-2;
+      const dow=DAYS_NL[d.getDay()];
+      const dateStr=d.toLocaleDateString('nl-NL',{day:'numeric',month:'short'});
+      let lbl=isToday?'vandaag':isYesterday?'gisteren':`${dow} ${dateStr}`;
+      return `<div class="wheel-item" data-index="${i}">${lbl}</div>`;
+    }).join('')+
+    '<div style="height:75px"></div>';
+  // Scroll to selected date or today
+  const selIdx=wheelDates.findIndex(d=>d.toDateString()===selectedDate.toDateString());
+  const targetIdx=selIdx>=0?selIdx:wheelDates.length-1;
+  setTimeout(()=>{
+    scroll.scrollTop=targetIdx*50;
+    updateWheelHighlight();
+  },50);
+  scroll.onscroll=()=>updateWheelHighlight();
   document.getElementById('date-picker-overlay').classList.add('open');
+}
+
+function updateWheelHighlight(){
+  const scroll=document.getElementById('wheel-scroll');
+  const centerIdx=Math.round(scroll.scrollTop/50);
+  scroll.querySelectorAll('.wheel-item').forEach((el,i)=>{
+    el.classList.toggle('center',i===centerIdx);
+  });
 }
 
 function closeDatePicker(){
@@ -321,15 +337,10 @@ function closeDatePicker(){
 }
 
 function confirmDate(){
-  const dayEl=document.querySelector('#scroll-day .selected');
-  const monthEl=document.querySelector('#scroll-month .selected');
-  const yearEl=document.querySelector('#scroll-year .selected');
-  if(dayEl&&monthEl&&yearEl){
-    const day=parseInt(dayEl.dataset.val);
-    const month=parseInt(monthEl.dataset.val);
-    const year=parseInt(yearEl.dataset.val);
-    const nd=new Date(year,month,day);
-    if(!isNaN(nd.getTime())) selectedDate=nd;
+  const scroll=document.getElementById('wheel-scroll');
+  const centerIdx=Math.round(scroll.scrollTop/50);
+  if(wheelDates[centerIdx]){
+    selectedDate=new Date(wheelDates[centerIdx]);
   }
   setTodayLbl();
   closeDatePicker();
