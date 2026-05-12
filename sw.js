@@ -1,4 +1,4 @@
-const CACHE = 'uitgave-tracker-v7';
+const CACHE = 'uitgave-tracker-v8';
 const ASSETS = [
   '/',
   '/index.html',

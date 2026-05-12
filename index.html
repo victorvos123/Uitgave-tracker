@@ -109,6 +109,15 @@
     .icon-opt.selected { background: var(--surface3); border-color: var(--border2); color: var(--text); }
     .add-cat-btn { width: 100%; padding: 12px; background: var(--accent); color: var(--accent-text); border: none; border-radius: var(--radius); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; font-family: 'Space Grotesk', sans-serif; }
     .add-cat-btn:disabled { opacity: 0.2; cursor: default; }
+    .consistency-wrap { margin: 0 1rem 1.5rem; background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; }
+    .consistency-lbl { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); font-family: 'Space Mono', monospace; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; }
+    .consistency-streak { color: var(--green); }
+    .consistency-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .day-block { aspect-ratio: 1; border-radius: 4px; background: var(--surface2); }
+    .day-block.filled { background: #4ade80; }
+    .day-block.today { outline: 1.5px solid rgba(255,255,255,0.3); outline-offset: 1px; }
+    .day-labels { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 6px; }
+    .day-label-item { font-size: 9px; text-align: center; color: var(--text3); font-family: 'Space Mono', monospace; }
     .empty-state { text-align: center; padding: 4rem 1rem; color: var(--text3); font-size: 12px; font-family: 'Space Mono', monospace; }
     .empty-state i { font-size: 32px; display: block; margin-bottom: 12px; }
     .flash { position: fixed; top: 2rem; left: 50%; transform: translateX(-50%); background: var(--surface3); border: 0.5px solid var(--border2); color: var(--green); padding: 10px 20px; border-radius: 100px; font-size: 12px; font-family: 'Space Mono', monospace; display: none; z-index: 200; white-space: nowrap; letter-spacing: 0.05em; }
@@ -153,6 +162,22 @@
     <div class="chart-wrap">
       <div class="chart-lbl">Cumulatief deze maand</div>
       <canvas id="line-chart"></canvas>
+    </div>
+    <div class="consistency-wrap">
+      <div class="consistency-lbl">
+        <span>Consistentie</span>
+        <span class="consistency-streak" id="streak-lbl"></span>
+      </div>
+      <div class="day-labels">
+        <div class="day-label-item">ma</div>
+        <div class="day-label-item">di</div>
+        <div class="day-label-item">wo</div>
+        <div class="day-label-item">do</div>
+        <div class="day-label-item">vr</div>
+        <div class="day-label-item">za</div>
+        <div class="day-label-item">zo</div>
+      </div>
+      <div class="consistency-grid" id="consistency-grid"></div>
     </div>
     <div class="cat-overview" id="cat-overview"></div>
   </div>
@@ -312,6 +337,7 @@ function renderOverview(){
   const me=getME(mo),total=me.reduce((s,e)=>s+e.amount,0);
   document.getElementById('total-val').textContent='€ '+total.toFixed(2);
   setTimeout(()=>drawChart(me,mo),50);
+  renderConsistency();
   const bc={};me.forEach(e=>{bc[e.cat]=(bc[e.cat]||0)+e.amount;});
   const sorted=Object.entries(bc).sort((a,b)=>b[1]-a[1]);
   const maxAmt=sorted.length?sorted[0][1]:1;
@@ -321,6 +347,57 @@ function renderOverview(){
     const cat=gc(cid),pct=Math.round((amt/maxAmt)*100);
     return `<div class="cat-ov-row"><div class="cat-ov-icon"><i class="ti ${cat.icon}"></i></div><div class="cat-ov-info"><div class="cat-ov-name">${cat.label}</div><div class="cat-ov-bar-wrap"><div class="cat-ov-bar" style="width:${pct}%"></div></div></div><div class="cat-ov-amt">€ ${amt.toFixed(2)}</div></div>`;
   }).join('');
+}
+
+function renderConsistency(){
+  const now=new Date();
+  // Get first day of month, adjust to start on Monday
+  const firstDay=new Date(now.getFullYear(),now.getMonth()+mo,1);
+  const lastDay=new Date(now.getFullYear(),now.getMonth()+mo+1,0);
+  const daysInMonth=lastDay.getDate();
+  
+  // Get days with entries
+  const activeDays=new Set();
+  entries.forEach(e=>{
+    const d=new Date(e.date);
+    const fy=firstDay.getFullYear(),fm=firstDay.getMonth();
+    if(d.getFullYear()===fy&&d.getMonth()===fm){
+      activeDays.add(d.getDate());
+    }
+  });
+
+  // Calculate streak
+  let streak=0;
+  const today=new Date();
+  for(let i=today.getDate();i>=1;i--){
+    if(today.getFullYear()===firstDay.getFullYear()&&today.getMonth()===firstDay.getMonth()&&activeDays.has(i)){
+      streak++;
+    } else if(today.getFullYear()===firstDay.getFullYear()&&today.getMonth()===firstDay.getMonth()){
+      break;
+    }
+  }
+  const streakEl=document.getElementById('streak-lbl');
+  if(streak>0) streakEl.textContent=streak+' dagen op rij';
+  else streakEl.textContent='';
+
+  // Build grid — start from Monday of week containing day 1
+  const startDow=firstDay.getDay()===0?6:firstDay.getDay()-1; // 0=Mon
+  const grid=document.getElementById('consistency-grid');
+  const todayDate=mo===0?now.getDate():-1;
+  let html='';
+  
+  // Empty cells before first day
+  for(let i=0;i<startDow;i++){
+    html+=`<div class="day-block" style="opacity:0"></div>`;
+  }
+  // Day cells
+  for(let d=1;d<=daysInMonth;d++){
+    const isToday=d===todayDate;
+    const isFilled=activeDays.has(d);
+    const isFuture=mo===0&&d>now.getDate();
+    html+=`<div class="day-block${isFilled?' filled':''}${isToday?' today':''}" style="${isFuture?'opacity:0.3':''}"></div>`;
+  }
+  grid.innerHTML=html;
 }
 
 function renderEntries(){
